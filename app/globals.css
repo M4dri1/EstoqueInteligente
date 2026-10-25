@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --kb-bg: 247 243 240;
+  --kb-panel: 255 255 255;
+  --kb-raised: 243 236 232;
+  --kb-field: 255 255 255;
+  --kb-line: 228 216 210;
+  --kb-hover: 250 246 243;
+  --kb-ink: 38 26 24;
+  --kb-muted: 122 102 96;
+  --kb-placeholder: 168 152 146;
+  --kb-brand-soft: 253 232 235;
+  --kb-cost: 185 167 160;
+  --kb-ok: 46 125 50;
+  --kb-warn: 176 106 0;
+  --kb-danger: 192 41 43;
+  --kb-info: 29 107 140;
+  --kb-error-bg: 253 236 234;
+  --kb-error-line: 243 193 187;
+  --kb-ok-bg: 234 245 232;
+  --kb-ok-line: 195 224 189;
+}
+
+html.dark {
+  color-scheme: dark;
+  --kb-bg: 23 17 17;
+  --kb-panel: 33 24 24;
+  --kb-raised: 43 31 31;
+  --kb-field: 20 14 14;
+  --kb-line: 67 47 46;
+  --kb-hover: 41 29 29;
+  --kb-ink: 246 236 230;
+  --kb-muted: 179 157 150;
+  --kb-placeholder: 124 103 98;
+  --kb-brand-soft: 61 21 25;
+  --kb-cost: 217 199 191;
+  --kb-ok: 124 196 106;
+  --kb-warn: 232 163 61;
+  --kb-danger: 255 122 107;
+  --kb-info: 140 196 220;
+  --kb-error-bg: 44 21 18;
+  --kb-error-line: 107 42 33;
+  --kb-ok-bg: 22 35 15;
+  --kb-ok-line: 47 84 40;
+}
+
+body {
+  background: rgb(var(--kb-bg));
+  color: rgb(var(--kb-ink));
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+}
+
+@layer components {
+  .kb-card {
+    @apply rounded-md border border-kb-line bg-kb-panel;
+  }
+
+  .kb-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-kb-brand-dark bg-kb-brand px-3 py-1.5 text-sm font-semibold text-white;
+  }
+
+  .kb-btn:hover {
+    @apply bg-kb-brand-dark;
+  }
+
+  .kb-btn:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .kb-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-kb-line bg-kb-raised px-3 py-1.5 text-sm font-medium text-kb-ink;
+  }
+
+  .kb-btn-ghost:hover {
+    @apply border-kb-brand;
+  }
+
+  .kb-btn-ghost:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .kb-btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-kb-line bg-kb-raised px-3 py-1.5 text-sm font-medium text-kb-danger;
+  }
+
+  .kb-btn-danger:hover {
+    @apply border-kb-danger;
+  }
+
+  .kb-input {
+    @apply w-full rounded-md border border-kb-line bg-kb-field px-2.5 py-1.5 text-sm text-kb-ink outline-none placeholder:text-kb-placeholder;
+  }
+
+  .kb-input:focus {
+    @apply border-kb-brand ring-1 ring-kb-brand;
+  }
+
+  .kb-label {
+    @apply mb-1 block text-sm font-medium text-kb-ink;
+  }
+
+  .kb-table {
+    @apply min-w-full text-left text-sm;
+  }
+
+  .kb-table thead {
+    @apply bg-kb-raised text-kb-muted;
+  }
+
+  .kb-table th {
+    @apply px-3 py-2 text-xs font-semibold uppercase tracking-wide;
+  }
+
+  .kb-table td {
+    @apply border-t border-kb-line px-3 py-2;
+  }
+
+  .kb-table tbody tr:hover {
+    @apply bg-kb-hover;
+  }
+
+  .kb-nav-link {
+    @apply whitespace-nowrap px-3 py-3 text-sm text-[#ffd9dc];
+  }
+
+  .kb-nav-link:hover {
+    @apply text-white;
+  }
+
+  .kb-nav-link.active {
+    @apply font-semibold text-white shadow-[inset_0_-3px_0_#ffffff];
+  }
+}
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .kb-card,
+  .kb-table thead {
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

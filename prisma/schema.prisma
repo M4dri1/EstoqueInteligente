@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum Unit {
+  ML
+  G
+  UN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(STAFF)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model Supplier {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  phone     String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model Product {
+  id            String              @id @default(cuid())
+  name          String              @unique
+  category      String
+  unit          Unit
+  packageLabel  String
+  packageSize   Int
+  costCents     Int
+  minStock      Int
+  targetStock   Int?
+  currentStock  Int                 @default(0)
+  returnable    Boolean             @default(false)
+  depositCents  Int                 @default(0)
+  emptyStock    Int                 @default(0)
+  barcode       String?             @unique
+  active        Boolean             @default(true)
+  supplierId    String?
+  supplier      Supplier?           @relation(fields: [supplierId], references: [id])
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([category])
+}
