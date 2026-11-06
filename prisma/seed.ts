@@ -61,7 +61,7 @@ async function seedUsers() {
   const name = process.env.ADMIN_NAME || "Administrador Kassius";
   const passwordHash = await bcrypt.hash(password, 10);
 
-  await prisma.user.upsert({
+  const admin = await prisma.user.upsert({
     where: { email },
     update: { passwordHash, name, role: "ADMIN", active: true },
     create: { email, passwordHash, name, role: "ADMIN" },
@@ -81,9 +81,17 @@ async function seedUsers() {
   }
 
   console.log(`Admin seed: ${email}`);
+  return admin.id;
 }
 
-async function seedCatalog() {
+const losses: Array<[string, number, string]> = [
+  ["Cerveja Brahma 600 ml", 2, "Garrafa quebrou no engradado"],
+  ["Limão tahiti", 25, "Limões estragados"],
+  ["Gelo", 5000, "Saco derreteu fora do freezer"],
+  ["Calabresa", 500, "Passou da validade"],
+];
+
+async function seedCatalog(adminId: string) {
   if ((await prisma.product.count()) > 0) {
     return;
   }
@@ -94,8 +102,12 @@ async function seedCatalog() {
     supplierIds.set(supplier.name, created.id);
   }
 
+  const start = new Date(Date.now() - 7 * 86_400_000);
+  const productIds = new Map<string, { id: string; costCents: number; packageSize: number }>();
+
   for (const item of products) {
-    await prisma.product.create({
+    const quantity = isProduction ? 0 : item.initialPackages * item.packageSize;
+    const product = await prisma.product.create({
       data: {
         name: item.name,
         category: item.category,
@@ -107,18 +119,54 @@ async function seedCatalog() {
         targetStock: item.targetPackages ? item.targetPackages * item.packageSize : null,
         returnable: Boolean(item.depositCents),
         depositCents: item.depositCents ?? 0,
-        currentStock: isProduction ? 0 : item.initialPackages * item.packageSize,
+        currentStock: quantity,
         supplierId: supplierIds.get(item.supplier),
       },
     });
+    productIds.set(item.name, { id: product.id, costCents: item.costCents, packageSize: item.packageSize });
+    if (quantity > 0) {
+      await prisma.stockMovement.create({
+        data: {
+          productId: product.id,
+          type: "ENTRADA",
+          quantity,
+          costCents: item.initialPackages * item.costCents,
+          note: "Estoque inicial",
+          userId: adminId,
+          createdAt: start,
+        },
+      });
+    }
+  }
+
+  if (!isProduction) {
+    const lossAt = new Date(Date.now() - 2 * 86_400_000);
+    for (const [productName, quantity, note] of losses) {
+      const product = productIds.get(productName)!;
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { currentStock: { decrement: quantity } },
+      });
+      await prisma.stockMovement.create({
+        data: {
+          productId: product.id,
+          type: "PERDA",
+          quantity: -quantity,
+          costCents: Math.round((quantity * product.costCents) / product.packageSize),
+          note,
+          userId: adminId,
+          createdAt: lossAt,
+        },
+      });
+    }
   }
 
   console.log(`Produtos de exemplo: ${products.length} produtos de ${suppliers.length} fornecedores.`);
 }
 
 async function main() {
-  await seedUsers();
-  await seedCatalog();
+  const adminId = await seedUsers();
+  await seedCatalog(adminId);
 }
 
 main()

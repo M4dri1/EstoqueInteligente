@@ -69,6 +69,28 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
+const MOVEMENT_STYLE: Record<string, string> = {
+  ENTRADA: "text-kb-ok",
+  VENDA: "text-kb-ink",
+  PERDA: "text-kb-danger",
+  AJUSTE: "text-kb-info",
+};
+
+const MOVEMENT_LABEL: Record<string, string> = {
+  ENTRADA: "Entrada",
+  VENDA: "Venda",
+  PERDA: "Perda",
+  AJUSTE: "Ajuste",
+};
+
+export function MovementBadge({ type }: { type: string }) {
+  return (
+    <span className={`text-xs font-semibold ${MOVEMENT_STYLE[type] ?? ""}`}>
+      {MOVEMENT_LABEL[type] ?? type}
+    </span>
+  );
+}
+
 export function Notice({ kind, children }: { kind: "error" | "success"; children: ReactNode }) {
   return (
     <p

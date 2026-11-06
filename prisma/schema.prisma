@@ -18,14 +18,22 @@ enum Unit {
   UN
 }
 
+enum MovementType {
+  ENTRADA
+  VENDA
+  PERDA
+  AJUSTE
+}
+
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String          @id @default(cuid())
+  email        String          @unique
   name         String
   passwordHash String
-  role         Role     @default(STAFF)
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
+  role         Role            @default(STAFF)
+  active       Boolean         @default(true)
+  createdAt    DateTime        @default(now())
+  movements    StockMovement[]
 }
 
 model Supplier {
@@ -57,6 +65,23 @@ model Product {
   supplier      Supplier?           @relation(fields: [supplierId], references: [id])
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
+  movements     StockMovement[]
 
   @@index([category])
+}
+
+model StockMovement {
+  id        String       @id @default(cuid())
+  productId String
+  product   Product      @relation(fields: [productId], references: [id])
+  type      MovementType
+  quantity  Int
+  costCents Int
+  note      String?
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  createdAt DateTime     @default(now())
+
+  @@index([productId, createdAt])
+  @@index([type, createdAt])
 }

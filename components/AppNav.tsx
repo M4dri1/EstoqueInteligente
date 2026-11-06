@@ -8,6 +8,7 @@ type NavItem = { href: string; label: string; adminOnly?: boolean };
 
 const ITEMS: NavItem[] = [
   { href: "/painel/estoque", label: "Estoque" },
+  { href: "/painel/movimentacoes", label: "Entradas e perdas" },
   { href: "/painel/fornecedores", label: "Fornecedores", adminOnly: true },
 ];
 

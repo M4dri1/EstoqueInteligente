@@ -55,5 +55,27 @@ export const supplierSchema = z.object({
   notes: optionalText(300),
 });
 
+export const movementSchema = z
+  .object({
+    productId: text(40),
+    type: z.enum(["ENTRADA", "PERDA", "AJUSTE"]),
+    quantity: z.number().int().min(-10_000_000).max(10_000_000),
+    costCents: z.number().int().min(0).max(10_000_000).optional(),
+    note: optionalText(200),
+  })
+  .refine((data) => data.quantity !== 0, {
+    message: "Informe uma quantidade diferente de zero.",
+    path: ["quantity"],
+  })
+  .refine((data) => data.type === "AJUSTE" || data.quantity > 0, {
+    message: "Entrada e perda usam quantidade positiva.",
+    path: ["quantity"],
+  })
+  .refine((data) => data.type !== "PERDA" || Boolean(data.note), {
+    message: "Informe o motivo da perda.",
+    path: ["note"],
+  });
+
 export type ProductInput = z.infer<typeof productSchema>;
 export type SupplierInput = z.infer<typeof supplierSchema>;
+export type MovementInput = z.infer<typeof movementSchema>;

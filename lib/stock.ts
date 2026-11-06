@@ -59,6 +59,18 @@ export function suggestedPackages(
   return Math.ceil(missing / product.packageSize);
 }
 
+export function averageCostCents(
+  current: { currentStock: number; costCents: number; packageSize: number },
+  entry: { quantity: number; paidCents: number }
+) {
+  const stock = Math.max(current.currentStock, 0);
+  if (stock === 0) {
+    return Math.round((entry.paidCents * current.packageSize) / entry.quantity);
+  }
+  const stockValue = (stock * current.costCents) / current.packageSize;
+  return Math.round(((stockValue + entry.paidCents) * current.packageSize) / (stock + entry.quantity));
+}
+
 export function packagesToBase(packages: number, packageSize: number) {
   return Math.round(packages * packageSize);
 }

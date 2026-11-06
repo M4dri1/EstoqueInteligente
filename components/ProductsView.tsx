@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { api, errorMessage } from "@/lib/client";
 import { formatCents, formatStock } from "@/lib/format";
@@ -146,6 +147,9 @@ export function ProductsView({ isAdmin }: { isAdmin: boolean }) {
                     </td>
                     {isAdmin ? <td className="whitespace-nowrap tabular-nums">{formatCents(product.stockValueCents)}</td> : null}
                     <td className="whitespace-nowrap text-right">
+                      <Link href={`/painel/movimentacoes?produto=${product.id}`} className="mr-3 text-sm text-kb-info hover:underline">
+                        Histórico
+                      </Link>
                       {isAdmin ? (
                         <button type="button" className="text-sm text-kb-muted hover:text-kb-ink" onClick={() => setEditing(product)}>
                           Editar
