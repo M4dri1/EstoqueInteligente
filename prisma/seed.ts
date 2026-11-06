@@ -84,6 +84,42 @@ async function seedUsers() {
   return admin.id;
 }
 
+const recipes: Array<{
+  name: string;
+  category: string;
+  priceCents: number;
+  items: Array<[string, number]>;
+  weight: number;
+}> = [
+  { name: "Brahma 600", category: "Cervejas", priceCents: 1200, items: [["Cerveja Brahma 600 ml", 1]], weight: 12 },
+  { name: "Original 600", category: "Cervejas", priceCents: 1400, items: [["Cerveja Original 600 ml", 1]], weight: 9 },
+  { name: "Litrão Skol", category: "Cervejas", priceCents: 1500, items: [["Cerveja Skol litrão 1 L", 1]], weight: 7 },
+  { name: "Heineken long neck", category: "Cervejas", priceCents: 1000, items: [["Cerveja Heineken long neck", 1]], weight: 4 },
+  { name: "Dose de 51", category: "Doses", priceCents: 500, items: [["Cachaça 51", 50]], weight: 6 },
+  { name: "Dose de Velho Barreiro", category: "Doses", priceCents: 500, items: [["Cachaça Velho Barreiro", 50]], weight: 3 },
+  { name: "Dose de conhaque", category: "Doses", priceCents: 600, items: [["Conhaque Dreher", 50]], weight: 2 },
+  { name: "Rabo de galo", category: "Doses", priceCents: 800, items: [["Cachaça 51", 40], ["Vermute Cinzano", 20]], weight: 2 },
+  { name: "Caipirinha de limão", category: "Caipirinhas", priceCents: 1500, items: [["Cachaça 51", 60], ["Limão tahiti", 2], ["Açúcar refinado", 30], ["Gelo", 150]], weight: 5 },
+  { name: "Caipiroska", category: "Caipirinhas", priceCents: 1800, items: [["Vodka Smirnoff", 60], ["Limão tahiti", 2], ["Açúcar refinado", 30], ["Gelo", 150]], weight: 2 },
+  { name: "Calabresa acebolada", category: "Porções", priceCents: 3500, items: [["Calabresa", 400], ["Óleo de soja", 30]], weight: 3 },
+  { name: "Mandioca frita", category: "Porções", priceCents: 2800, items: [["Mandioca congelada", 500], ["Óleo de soja", 100]], weight: 2 },
+  { name: "Batata frita", category: "Porções", priceCents: 2800, items: [["Batata frita congelada", 400], ["Óleo de soja", 100]], weight: 3 },
+  { name: "Frango a passarinho", category: "Porções", priceCents: 4000, items: [["Frango a passarinho", 500], ["Óleo de soja", 150]], weight: 2 },
+  { name: "Espetinho de carne", category: "Espetinhos", priceCents: 1000, items: [["Espetinho de carne", 1], ["Carvão", 100]], weight: 4 },
+  { name: "Espetinho de frango", category: "Espetinhos", priceCents: 800, items: [["Espetinho de frango", 1], ["Carvão", 100]], weight: 3 },
+  { name: "Coca-Cola lata", category: "Refri e água", priceCents: 600, items: [["Coca-Cola lata", 1]], weight: 4 },
+  { name: "Guaraná lata", category: "Refri e água", priceCents: 600, items: [["Guaraná Antarctica lata", 1]], weight: 3 },
+  { name: "Água mineral", category: "Refri e água", priceCents: 400, items: [["Água mineral 500 ml", 1]], weight: 2 },
+];
+
+function random(seed: number) {
+  let state = seed;
+  return () => {
+    state = (state * 1103515245 + 12345) % 2147483648;
+    return state / 2147483648;
+  };
+}
+
 const losses: Array<[string, number, string]> = [
   ["Cerveja Brahma 600 ml", 2, "Garrafa quebrou no engradado"],
   ["Limão tahiti", 25, "Limões estragados"],
@@ -103,7 +139,10 @@ async function seedCatalog(adminId: string) {
   }
 
   const start = new Date(Date.now() - 7 * 86_400_000);
-  const productIds = new Map<string, { id: string; costCents: number; packageSize: number }>();
+  const productIds = new Map<
+    string,
+    { id: string; costCents: number; packageSize: number; current: number }
+  >();
 
   for (const item of products) {
     const quantity = isProduction ? 0 : item.initialPackages * item.packageSize;
@@ -123,7 +162,12 @@ async function seedCatalog(adminId: string) {
         supplierId: supplierIds.get(item.supplier),
       },
     });
-    productIds.set(item.name, { id: product.id, costCents: item.costCents, packageSize: item.packageSize });
+    productIds.set(item.name, {
+      id: product.id,
+      costCents: item.costCents,
+      packageSize: item.packageSize,
+      current: quantity,
+    });
     if (quantity > 0) {
       await prisma.stockMovement.create({
         data: {
@@ -139,10 +183,29 @@ async function seedCatalog(adminId: string) {
     }
   }
 
+  const recipeRows = [];
+  for (const recipe of recipes) {
+    const created = await prisma.recipe.create({
+      data: {
+        name: recipe.name,
+        category: recipe.category,
+        priceCents: recipe.priceCents,
+        items: {
+          create: recipe.items.map(([productName, quantity]) => ({
+            productId: productIds.get(productName)!.id,
+            quantity,
+          })),
+        },
+      },
+    });
+    recipeRows.push({ ...recipe, id: created.id });
+  }
+
   if (!isProduction) {
     const lossAt = new Date(Date.now() - 2 * 86_400_000);
     for (const [productName, quantity, note] of losses) {
       const product = productIds.get(productName)!;
+      product.current -= quantity;
       await prisma.product.update({
         where: { id: product.id },
         data: { currentStock: { decrement: quantity } },
@@ -159,9 +222,66 @@ async function seedCatalog(adminId: string) {
         },
       });
     }
+
+    const next = random(42);
+    const totalWeight = recipeRows.reduce((sum, recipe) => sum + recipe.weight, 0);
+    for (let day = 6; day >= 0; day -= 1) {
+      const date = new Date(Date.now() - day * 86_400_000);
+      const salesToday = Math.round(25 + next() * 15);
+      for (let index = 0; index < salesToday; index += 1) {
+        let pick = next() * totalWeight;
+        const recipe = recipeRows.find((row) => (pick -= row.weight) < 0) ?? recipeRows[0];
+        const quantity = 1 + Math.floor(next() * 3);
+        const lines = recipe.items.map(([productName, perUnit]) => ({
+          product: productIds.get(productName)!,
+          quantity: perUnit * quantity,
+        }));
+        if (lines.some((line) => line.product.current < line.quantity)) {
+          continue;
+        }
+        const createdAt = new Date(date);
+        createdAt.setHours(16 + Math.floor(next() * 8), Math.floor(next() * 60), 0, 0);
+        if (createdAt.getTime() > Date.now()) {
+          createdAt.setTime(Date.now() - (salesToday - index) * 60_000);
+        }
+        const lineCosts = lines.map((line) =>
+          Math.round((line.quantity * line.product.costCents) / line.product.packageSize)
+        );
+        await prisma.sale.create({
+          data: {
+            recipeId: recipe.id,
+            quantity,
+            priceCents: recipe.priceCents * quantity,
+            costCents: lineCosts.reduce((sum, value) => sum + value, 0),
+            userId: adminId,
+            createdAt,
+            movements: {
+              create: lines.map((line, position) => ({
+                productId: line.product.id,
+                type: "VENDA" as const,
+                quantity: -line.quantity,
+                costCents: lineCosts[position],
+                userId: adminId,
+                createdAt,
+              })),
+            },
+          },
+        });
+        for (const line of lines) {
+          line.product.current -= line.quantity;
+        }
+      }
+    }
+
+    for (const product of Array.from(productIds.values())) {
+      await prisma.product.update({
+        where: { id: product.id },
+        data: { currentStock: product.current },
+      });
+    }
   }
 
-  console.log(`Produtos de exemplo: ${products.length} produtos de ${suppliers.length} fornecedores.`);
+  console.log(`Dados de exemplo: ${products.length} produtos, ${recipes.length} itens no cardápio.`);
 }
 
 async function main() {

@@ -10,6 +10,16 @@ export const CATEGORIES = [
   "Outros",
 ] as const;
 
+export const RECIPE_CATEGORIES = [
+  "Cervejas",
+  "Doses",
+  "Caipirinhas",
+  "Porções",
+  "Espetinhos",
+  "Refri e água",
+  "Outros",
+] as const;
+
 const text = (max: number) => z.string().trim().min(1).max(max);
 const optionalText = (max: number) =>
   z
@@ -76,6 +86,33 @@ export const movementSchema = z
     path: ["note"],
   });
 
+export const recipeSchema = z.object({
+  name: text(80),
+  category: z.enum(RECIPE_CATEGORIES),
+  priceCents: z.number().int().min(0).max(10_000_000),
+  active: z.boolean().optional(),
+  items: z
+    .array(
+      z.object({
+        productId: text(40),
+        quantity: z.number().int().min(1).max(100_000),
+      })
+    )
+    .min(1)
+    .max(20)
+    .refine(
+      (items) => new Set(items.map((item) => item.productId)).size === items.length,
+      { message: "Um insumo aparece mais de uma vez." }
+    ),
+});
+
+export const saleSchema = z.object({
+  recipeId: text(40),
+  quantity: z.number().int().min(1).max(200),
+});
+
 export type ProductInput = z.infer<typeof productSchema>;
 export type SupplierInput = z.infer<typeof supplierSchema>;
 export type MovementInput = z.infer<typeof movementSchema>;
+export type RecipeInput = z.infer<typeof recipeSchema>;
+export type SaleInput = z.infer<typeof saleSchema>;

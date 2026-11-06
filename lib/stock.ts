@@ -13,6 +13,13 @@ export type StockProduct = {
 
 export type StockStatus = "ZERADO" | "BAIXO" | "OK";
 
+export type Shortage = {
+  productId: string;
+  name: string;
+  needed: number;
+  available: number;
+};
+
 export const UNIT_LABEL: Record<UnitCode, string> = {
   ML: "ml",
   G: "g",
@@ -85,4 +92,39 @@ export function splitPackages(quantity: number, packageSize: number) {
     packages: sign * Math.floor(abs / packageSize),
     rest: sign * (abs % packageSize),
   };
+}
+
+export function recipeCostCents(
+  items: Array<{
+    quantity: number;
+    product: Pick<StockProduct, "costCents" | "packageSize">;
+  }>
+) {
+  return items.reduce(
+    (sum, item) => sum + valueCents(item.quantity, item.product),
+    0
+  );
+}
+
+export function marginOf(priceCents: number, costCents: number) {
+  const marginCents = priceCents - costCents;
+  const marginPct = priceCents > 0 ? (marginCents / priceCents) * 100 : 0;
+  return { marginCents, marginPct: Math.round(marginPct * 10) / 10 };
+}
+
+export function findShortages(
+  items: Array<{
+    quantity: number;
+    product: Pick<StockProduct, "id" | "name" | "currentStock">;
+  }>,
+  times: number
+): Shortage[] {
+  return items
+    .map((item) => ({
+      productId: item.product.id,
+      name: item.product.name,
+      needed: item.quantity * times,
+      available: item.product.currentStock,
+    }))
+    .filter((row) => row.needed > row.available);
 }

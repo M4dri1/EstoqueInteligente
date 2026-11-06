@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "kassius_session";
-const ADMIN_PATHS = ["/painel/fornecedores"];
+const ADMIN_PATHS = ["/painel/cardapio", "/painel/fornecedores"];
 
 function getSecret() {
   const secret = process.env.JWT_SECRET;

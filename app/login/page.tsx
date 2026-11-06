@@ -26,7 +26,7 @@ export default function LoginPage() {
         setError(payload.error || "Falha no login.");
         return;
       }
-      router.push("/painel");
+      router.push(payload.role === "ADMIN" ? "/painel" : "/painel/balcao");
       router.refresh();
     } catch {
       setError("Falha de conexão.");

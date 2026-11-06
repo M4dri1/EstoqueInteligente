@@ -7,8 +7,10 @@ import { useState } from "react";
 type NavItem = { href: string; label: string; adminOnly?: boolean };
 
 const ITEMS: NavItem[] = [
+  { href: "/painel/balcao", label: "Balcão" },
   { href: "/painel/estoque", label: "Estoque" },
   { href: "/painel/movimentacoes", label: "Entradas e perdas" },
+  { href: "/painel/cardapio", label: "Cardápio", adminOnly: true },
   { href: "/painel/fornecedores", label: "Fornecedores", adminOnly: true },
 ];
 

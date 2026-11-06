@@ -34,6 +34,7 @@ model User {
   active       Boolean         @default(true)
   createdAt    DateTime        @default(now())
   movements    StockMovement[]
+  sales        Sale[]          @relation("SaleUser")
 }
 
 model Supplier {
@@ -66,8 +67,47 @@ model Product {
   createdAt     DateTime            @default(now())
   updatedAt     DateTime            @updatedAt
   movements     StockMovement[]
+  recipeItems   RecipeItem[]
 
   @@index([category])
+}
+
+model Recipe {
+  id         String       @id @default(cuid())
+  name       String       @unique
+  category   String
+  priceCents Int
+  active     Boolean      @default(true)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  items      RecipeItem[]
+  sales      Sale[]
+}
+
+model RecipeItem {
+  id        String  @id @default(cuid())
+  recipeId  String
+  recipe    Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  @@unique([recipeId, productId])
+}
+
+model Sale {
+  id         String          @id @default(cuid())
+  recipeId   String
+  recipe     Recipe          @relation(fields: [recipeId], references: [id])
+  quantity   Int
+  priceCents Int
+  costCents  Int
+  userId     String
+  user       User            @relation("SaleUser", fields: [userId], references: [id])
+  createdAt  DateTime        @default(now())
+  movements  StockMovement[]
+
+  @@index([createdAt])
 }
 
 model StockMovement {
@@ -80,6 +120,8 @@ model StockMovement {
   note      String?
   userId    String
   user      User         @relation(fields: [userId], references: [id])
+  saleId    String?
+  sale      Sale?        @relation(fields: [saleId], references: [id])
   createdAt DateTime     @default(now())
 
   @@index([productId, createdAt])

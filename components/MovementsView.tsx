@@ -215,6 +215,7 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
             <select className="kb-input w-auto" value={filterType} onChange={(event) => setFilterType(event.target.value)} aria-label="Tipo">
               <option value="">Todos os tipos</option>
               <option value="ENTRADA">Entradas</option>
+              <option value="VENDA">Vendas</option>
               <option value="PERDA">Perdas</option>
               <option value="AJUSTE">Ajustes</option>
             </select>
