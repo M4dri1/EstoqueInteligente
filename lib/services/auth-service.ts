@@ -1,5 +1,7 @@
 import { authenticate, createSession, type SessionPayload } from "@/lib/auth";
 import { loginSchema } from "@/lib/validation";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/client-ip";
 import { fail, type ServiceResult } from "@/lib/api";
 
 export const authService = {
@@ -8,6 +10,12 @@ export const authService = {
     headers: Headers;
     ipFallback?: string | null;
   }): Promise<ServiceResult<SessionPayload>> {
+    const ip = clientIp(input.headers, input.ipFallback);
+    const limit = await checkRateLimit(`login:${ip}`, 10, 60_000);
+    if (!limit.allowed) {
+      return fail(429, "Muitas tentativas. Aguarde e tente novamente.");
+    }
+
     const parsed = loginSchema.safeParse(input.body);
     if (!parsed.success) {
       return fail(400, "E-mail ou senha inválidos.");

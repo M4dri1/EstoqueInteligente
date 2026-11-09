@@ -13,6 +13,17 @@ export type StockProduct = {
 
 export type StockStatus = "ZERADO" | "BAIXO" | "OK";
 
+export type AbcClass = "A" | "B" | "C";
+
+export type AbcRow = {
+  productId: string;
+  name: string;
+  valueCents: number;
+  share: number;
+  cumulative: number;
+  abc: AbcClass;
+};
+
 export type Shortage = {
   productId: string;
   name: string;
@@ -134,6 +145,52 @@ export function findShortages(
       available: item.product.currentStock,
     }))
     .filter((row) => row.needed > row.available);
+}
+
+export function buildAbcCurve(
+  rows: Array<{ productId: string; name: string; valueCents: number }>
+): AbcRow[] {
+  const positive = rows.filter((row) => row.valueCents > 0);
+  const total = positive.reduce((sum, row) => sum + row.valueCents, 0);
+  if (total === 0) {
+    return [];
+  }
+
+  let running = 0;
+  return [...positive]
+    .sort(
+      (left, right) =>
+        right.valueCents - left.valueCents || left.name.localeCompare(right.name)
+    )
+    .map((row) => {
+      const before = running;
+      running += row.valueCents;
+      const share = (row.valueCents / total) * 100;
+      const cumulative = (running / total) * 100;
+      const startPct = (before / total) * 100;
+      const abc: AbcClass = startPct < 80 ? "A" : startPct < 95 ? "B" : "C";
+      return {
+        ...row,
+        share: Math.round(share * 10) / 10,
+        cumulative: Math.round(cumulative * 10) / 10,
+        abc,
+      };
+    });
+}
+
+export function coverageDays(
+  currentStock: number,
+  consumedInPeriod: number,
+  periodDays: number
+) {
+  if (consumedInPeriod <= 0 || periodDays <= 0) {
+    return null;
+  }
+  if (currentStock <= 0) {
+    return 0;
+  }
+  const perDay = consumedInPeriod / periodDays;
+  return Math.floor(currentStock / perDay);
 }
 
 export function inventoryDifference(expected: number, counted: number | null) {

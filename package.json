@@ -9,10 +9,15 @@
     "lint": "next lint",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
-    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
-    "db:setup": "prisma db push && tsx prisma/seed.ts",
-    "setup": "npm run docker:up && npx wait-on tcp:5434 && npm run db:setup",
+    "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
+    "db:cardapio": "prisma migrate deploy && tsx prisma/seed.ts --cardapio",
+    "setup": "npm run docker:up && npx wait-on tcp:5434 tcp:6381 && npm run db:setup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:flows": "tsx scripts/audit-flows.ts",
     "postinstall": "prisma generate"
   },
   "prisma": {

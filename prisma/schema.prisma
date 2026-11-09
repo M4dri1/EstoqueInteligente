@@ -31,16 +31,17 @@ enum InventoryStatus {
 }
 
 model User {
-  id           String          @id @default(cuid())
-  email        String          @unique
+  id           String           @id @default(cuid())
+  email        String           @unique
   name         String
   passwordHash String
-  role         Role            @default(STAFF)
-  active       Boolean         @default(true)
-  createdAt    DateTime        @default(now())
-  movements    StockMovement[]
-  sales        Sale[]           @relation("SaleUser")
-  inventories  InventoryCount[]
+  role         Role             @default(STAFF)
+  active       Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  movements     StockMovement[]
+  sales         Sale[]           @relation("SaleUser")
+  canceledSales Sale[]           @relation("SaleCanceledBy")
+  inventories   InventoryCount[]
 }
 
 model Supplier {
@@ -109,44 +110,48 @@ model Sale {
   quantity   Int
   priceCents Int
   costCents  Int
-  userId     String
-  user       User            @relation("SaleUser", fields: [userId], references: [id])
-  createdAt  DateTime        @default(now())
-  movements  StockMovement[]
+  userId       String
+  user         User            @relation("SaleUser", fields: [userId], references: [id])
+  createdAt    DateTime        @default(now())
+  canceledAt   DateTime?
+  canceledById String?
+  canceledBy   User?           @relation("SaleCanceledBy", fields: [canceledById], references: [id])
+  movements    StockMovement[]
 
   @@index([createdAt])
 }
 
 model StockMovement {
-  id        String       @id @default(cuid())
-  productId String
-  product   Product      @relation(fields: [productId], references: [id])
-  type      MovementType
-  quantity  Int
-  costCents Int
-  note      String?
-  userId    String
-  user      User         @relation(fields: [userId], references: [id])
-  saleId      String?
-  sale        Sale?           @relation(fields: [saleId], references: [id])
-  inventoryId String?
-  inventory   InventoryCount? @relation(fields: [inventoryId], references: [id])
-  createdAt   DateTime        @default(now())
+  id            String          @id @default(cuid())
+  productId     String
+  product       Product         @relation(fields: [productId], references: [id])
+  type          MovementType
+  quantity      Int
+  costCents     Int
+  emptiesOut    Int?
+  note          String?
+  userId        String
+  user          User            @relation(fields: [userId], references: [id])
+  saleId        String?
+  sale          Sale?           @relation(fields: [saleId], references: [id])
+  inventoryId   String?
+  inventory     InventoryCount? @relation(fields: [inventoryId], references: [id])
+  createdAt     DateTime        @default(now())
 
   @@index([productId, createdAt])
   @@index([type, createdAt])
 }
 
 model InventoryCount {
-  id         String          @id @default(cuid())
+  id        String          @id @default(cuid())
   status     InventoryStatus @default(ABERTO)
   categories String[]        @default([])
   userId     String
-  user       User            @relation(fields: [userId], references: [id])
-  createdAt  DateTime        @default(now())
-  closedAt   DateTime?
-  items      InventoryItem[]
-  movements  StockMovement[]
+  user      User            @relation(fields: [userId], references: [id])
+  createdAt DateTime        @default(now())
+  closedAt  DateTime?
+  items     InventoryItem[]
+  movements StockMovement[]
 }
 
 model InventoryItem {

@@ -17,5 +17,20 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: kassius-redis
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    volumes:
+      - kassius_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   kassius_postgres_data:
+  kassius_redis_data:

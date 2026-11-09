@@ -14,6 +14,7 @@ const withItems = {
           costCents: true,
           currentStock: true,
           active: true,
+          returnable: true,
         },
       },
     },

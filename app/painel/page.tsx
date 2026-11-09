@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+import { getActiveUser } from "@/lib/auth";
+import { DashboardView } from "@/components/DashboardView";
 
-export default function PanelPage() {
-  redirect("/painel/estoque");
+export default async function PanelPage() {
+  const user = await getActiveUser();
+  return <DashboardView isAdmin={user?.role === "ADMIN"} />;
 }

@@ -7,9 +7,34 @@ import { InsufficientStockError } from "@/lib/repositories/movement-repository";
 import { findShortages, valueCents } from "@/lib/stock";
 import { formatBase } from "@/lib/format";
 
+const STAFF_CANCEL_MINUTES = 15;
+
 export const saleService = {
   recent() {
     return saleRepository.recent(20);
+  },
+
+  async cancel(id: string, user: SessionPayload): Promise<ServiceResult<{ id: string }>> {
+    const sale = await saleRepository.findById(id);
+    if (!sale) {
+      return fail(404, "Venda não encontrada.");
+    }
+    if (sale.canceledAt) {
+      return fail(409, "Essa venda já foi cancelada.");
+    }
+    if (user.role !== "ADMIN") {
+      const ageMinutes = (Date.now() - sale.createdAt.getTime()) / 60_000;
+      if (sale.userId !== user.userId || ageMinutes > STAFF_CANCEL_MINUTES) {
+        return fail(
+          403,
+          `Você só cancela vendas suas dos últimos ${STAFF_CANCEL_MINUTES} minutos. Peça ao administrador.`
+        );
+      }
+    }
+    if (!(await saleRepository.cancel(id, user.userId))) {
+      return fail(409, "Essa venda já foi cancelada.");
+    }
+    return { ok: true, data: { id } };
   },
 
   async register(
@@ -42,6 +67,8 @@ export const saleService = {
       productName: item.product.name,
       quantity: item.quantity * quantity,
       costCents: valueCents(item.quantity * quantity, item.product),
+      empties:
+        item.product.returnable && item.product.unit === "UN" ? item.quantity * quantity : 0,
     }));
     const costCents = lines.reduce((sum, line) => sum + line.costCents, 0);
     const totalCents = recipe.priceCents * quantity;

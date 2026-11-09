@@ -7,9 +7,11 @@ import { formatCents, formatStock } from "@/lib/format";
 import { CATEGORIES } from "@/lib/validation";
 import { EmptyRow, Notice, PageHeader, Section, StatusBadge } from "./ui";
 import { ProductForm, type EditableProduct } from "./ProductForm";
+import { EmptiesPanel } from "./EmptiesPanel";
 
 type Product = EditableProduct & {
   currentStock: number;
+  emptyStock: number;
   status: string;
   stockValueCents: number;
 };
@@ -168,6 +170,12 @@ export function ProductsView({ isAdmin }: { isAdmin: boolean }) {
           </p>
         ) : null}
       </Section>
+
+      <EmptiesPanel
+        products={(products ?? []).filter((product) => product.returnable && product.active)}
+        isAdmin={isAdmin}
+        onChanged={() => load().catch((reason) => setError(errorMessage(reason)))}
+      />
     </>
   );
 }

@@ -30,8 +30,10 @@ type Sale = {
   quantity: number;
   priceCents: number;
   createdAt: string;
+  canceledAt: string | null;
   recipe: { name: string };
   user: { name: string };
+  canceledBy: { name: string } | null;
 };
 
 export function SalesView() {
@@ -125,9 +127,29 @@ export function SalesView() {
     setSaving(false);
   }
 
+  async function cancelSale(sale: Sale) {
+    if (!window.confirm(`Cancelar ${sale.quantity}× ${sale.recipe.name}? O estoque volta.`)) {
+      return;
+    }
+    setMessage(null);
+    try {
+      await api(`/api/vendas/${sale.id}`, { method: "DELETE" });
+      setMessage({ kind: "success", text: `Venda de ${sale.recipe.name} cancelada. O estoque voltou.` });
+      await load();
+    } catch (reason) {
+      setMessage({ kind: "error", text: errorMessage(reason) });
+    }
+  }
+
   return (
-    <>
+    <div className="pb-20 xl:pb-0">
       <PageHeader title="Balcão" />
+
+      {message ? (
+        <div className="sticky top-0 z-10 mb-3 xl:hidden">
+          <Notice kind={message.kind}>{message.text}</Notice>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
         <div>
@@ -152,32 +174,44 @@ export function SalesView() {
                     const count = inCart(recipe.id);
                     const out = recipe.available <= 0;
                     return (
-                      <button
-                        key={recipe.id}
-                        type="button"
-                        onClick={() => add(recipe)}
-                        disabled={out}
-                        className={`relative min-h-[64px] rounded-md border border-l-4 px-3 py-2 text-left ${
-                          CATEGORY_COLOR[recipe.category] ?? "border-l-kb-line"
-                        } ${
-                          count
-                            ? "border-kb-brand bg-kb-brand-soft"
-                            : "border-kb-line bg-kb-panel hover:bg-kb-raised"
-                        } ${out ? "cursor-not-allowed opacity-50" : ""}`}
-                      >
+                      <div key={recipe.id} className="relative">
+                        <button
+                          type="button"
+                          onClick={() => add(recipe)}
+                          disabled={out}
+                          className={`min-h-[64px] w-full rounded-md border border-l-4 px-3 py-2 text-left ${
+                            CATEGORY_COLOR[recipe.category] ?? "border-l-kb-line"
+                          } ${
+                            count
+                              ? "border-kb-brand bg-kb-brand-soft"
+                              : "border-kb-line bg-kb-panel hover:bg-kb-raised"
+                          } ${out ? "cursor-not-allowed opacity-50" : ""}`}
+                        >
+                          {count ? (
+                            <span className="absolute right-1.5 top-1.5 flex h-7 min-w-7 items-center justify-center rounded-full bg-kb-brand px-1.5 text-sm font-bold text-white">
+                              {count}
+                            </span>
+                          ) : null}
+                          <span className={`block font-semibold ${count ? "pr-16" : ""}`}>{recipe.name}</span>
+                          <span className="flex justify-between text-xs">
+                            <span>{formatCents(recipe.priceCents)}</span>
+                            <span className={out ? "text-kb-danger" : recipe.available <= 5 ? "text-kb-warn" : "text-kb-muted"}>
+                              {out ? "sem estoque" : `${recipe.available} disp.`}
+                            </span>
+                          </span>
+                        </button>
                         {count ? (
-                          <span className="absolute right-1.5 top-1.5 flex h-6 min-w-6 items-center justify-center rounded-full bg-kb-brand px-1.5 text-xs font-bold text-white">
-                            {count}
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => change(recipe.id, -1)}
+                            aria-label={`Tirar um ${recipe.name}`}
+                            title="Tirar um"
+                            className="absolute right-10 top-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-kb-brand bg-kb-panel text-lg font-bold leading-none text-kb-brand hover:bg-kb-hover"
+                          >
+                            −
+                          </button>
                         ) : null}
-                        <span className="block pr-6 font-semibold">{recipe.name}</span>
-                        <span className="flex justify-between text-xs">
-                          <span>{formatCents(recipe.priceCents)}</span>
-                          <span className={out ? "text-kb-danger" : recipe.available <= 5 ? "text-kb-warn" : "text-kb-muted"}>
-                            {out ? "sem estoque" : `${recipe.available} disp.`}
-                          </span>
-                        </span>
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -220,7 +254,7 @@ export function SalesView() {
                   <span className="text-kb-muted">{cartCount} {cartCount === 1 ? "item" : "itens"}</span>
                   <span className="font-semibold">{formatCents(cartTotal)}</span>
                 </p>
-                <button type="button" className="kb-btn w-full" onClick={launch} disabled={saving}>
+                <button type="button" className="kb-btn hidden w-full xl:inline-flex" onClick={launch} disabled={saving}>
                   {saving ? "Lançando..." : "Lançar pedido"}
                 </button>
               </div>
@@ -236,19 +270,30 @@ export function SalesView() {
             <table className="kb-table">
               <tbody>
                 {sales.length === 0 ? (
-                  <EmptyRow colSpan={2}>Nenhuma venda registrada.</EmptyRow>
+                  <EmptyRow colSpan={3}>Nenhuma venda registrada.</EmptyRow>
                 ) : (
                   sales.slice(0, 12).map((sale) => (
-                    <tr key={sale.id}>
+                    <tr key={sale.id} className={sale.canceledAt ? "text-kb-muted" : ""}>
                       <td>
-                        <span className="block">
+                        <span className={`block ${sale.canceledAt ? "line-through" : ""}`}>
                           {sale.quantity}× {sale.recipe.name}
                         </span>
                         <span className="text-xs text-kb-muted">
-                          {formatDateTime(sale.createdAt)} · {sale.user.name}
+                          {sale.canceledAt
+                            ? `cancelada por ${sale.canceledBy?.name ?? "—"}`
+                            : `${formatDateTime(sale.createdAt)} · ${sale.user.name}`}
                         </span>
                       </td>
-                      <td className="text-right tabular-nums">{formatCents(sale.priceCents)}</td>
+                      <td className={`text-right tabular-nums ${sale.canceledAt ? "line-through" : ""}`}>
+                        {formatCents(sale.priceCents)}
+                      </td>
+                      <td className="w-16 text-right">
+                        {sale.canceledAt ? null : (
+                          <button type="button" className="text-xs text-kb-danger hover:underline" onClick={() => cancelSale(sale)}>
+                            Cancelar
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -257,6 +302,20 @@ export function SalesView() {
           </Section>
         </div>
       </div>
-    </>
+
+      {cart.length ? (
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-kb-line bg-kb-panel px-4 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.15)] xl:hidden">
+          <div className="mx-auto flex max-w-7xl items-center gap-3">
+            <div className="flex-1">
+              <p className="text-xs text-kb-muted">{cartCount} {cartCount === 1 ? "item" : "itens"} no pedido</p>
+              <p className="text-lg font-semibold tabular-nums">{formatCents(cartTotal)}</p>
+            </div>
+            <button type="button" className="kb-btn px-6 py-2.5 text-base" onClick={launch} disabled={saving}>
+              {saving ? "Lançando..." : "Lançar pedido"}
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

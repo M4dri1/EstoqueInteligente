@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 const isProduction = process.env.NODE_ENV === "production";
+const catalogOnly = process.argv.includes("--cardapio");
 
 type ProductSeed = {
   name: string;
@@ -52,38 +53,6 @@ const products: ProductSeed[] = [
   { name: "Carvão", category: "Gelo e descartáveis", unit: "G", packageLabel: "saco", packageSize: 3000, costCents: 1990, minStock: 3000, supplier: "Gelo e carvão", initialPackages: 4 },
 ];
 
-async function seedUsers() {
-  if (isProduction && (process.env.ADMIN_PASSWORD || "").length < 12) {
-    throw new Error("Em produção, ADMIN_PASSWORD precisa ter pelo menos 12 caracteres.");
-  }
-  const email = (process.env.ADMIN_EMAIL || "admin@kassius.local").toLowerCase();
-  const password = process.env.ADMIN_PASSWORD || "kassiusadmin123";
-  const name = process.env.ADMIN_NAME || "Administrador Kassius";
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const admin = await prisma.user.upsert({
-    where: { email },
-    update: { passwordHash, name, role: "ADMIN", active: true },
-    create: { email, passwordHash, name, role: "ADMIN" },
-  });
-
-  if (!isProduction) {
-    await prisma.user.upsert({
-      where: { email: "funcionario@kassius.local" },
-      update: {},
-      create: {
-        email: "funcionario@kassius.local",
-        name: "Funcionário do bar",
-        role: "STAFF",
-        passwordHash: await bcrypt.hash("kassiusbar123", 10),
-      },
-    });
-  }
-
-  console.log(`Admin seed: ${email}`);
-  return admin.id;
-}
-
 const recipes: Array<{
   name: string;
   category: string;
@@ -112,6 +81,10 @@ const recipes: Array<{
   { name: "Água mineral", category: "Refri e água", priceCents: 400, items: [["Água mineral 500 ml", 1]], weight: 2 },
 ];
 
+function cost(quantity: number, product: { costCents: number; packageSize: number }) {
+  return Math.round((quantity * product.costCents) / product.packageSize);
+}
+
 function random(seed: number) {
   let state = seed;
   return () => {
@@ -120,14 +93,41 @@ function random(seed: number) {
   };
 }
 
-const losses: Array<[string, number, string]> = [
-  ["Cerveja Brahma 600 ml", 2, "Garrafa quebrou no engradado"],
-  ["Limão tahiti", 25, "Limões estragados"],
-  ["Gelo", 5000, "Saco derreteu fora do freezer"],
-  ["Calabresa", 500, "Passou da validade"],
-];
+async function seedUsers() {
+  if (isProduction && (process.env.ADMIN_PASSWORD || "").length < 12) {
+    throw new Error("Em produção, ADMIN_PASSWORD precisa ter pelo menos 12 caracteres.");
+  }
+  const email = (process.env.ADMIN_EMAIL || "admin@kassius.local").toLowerCase();
+  const password = process.env.ADMIN_PASSWORD || "kassiusadmin123";
+  const name = process.env.ADMIN_NAME || "Administrador Kassius";
+  const passwordHash = await bcrypt.hash(password, 10);
 
-async function seedCatalog(adminId: string) {
+  const admin = await prisma.user.upsert({
+    where: { email },
+    update: { passwordHash, name, role: "ADMIN", active: true },
+    create: { email, passwordHash, name, role: "ADMIN" },
+  });
+
+  let staffId: string | null = null;
+  if (!isProduction) {
+    const staff = await prisma.user.upsert({
+      where: { email: "funcionario@kassius.local" },
+      update: {},
+      create: {
+        email: "funcionario@kassius.local",
+        name: "Funcionário do bar",
+        role: "STAFF",
+        passwordHash: await bcrypt.hash("kassiusbar123", 10),
+      },
+    });
+    staffId = staff.id;
+  }
+
+  console.log(`Admin seed: ${email}`);
+  return { admin, staffId };
+}
+
+async function seedSampleData(adminId: string, staffId: string) {
   if ((await prisma.product.count()) > 0) {
     return;
   }
@@ -138,14 +138,23 @@ async function seedCatalog(adminId: string) {
     supplierIds.set(supplier.name, created.id);
   }
 
-  const start = new Date(Date.now() - 7 * 86_400_000);
-  const productIds = new Map<
+  const start = new Date(Date.now() - 30 * 86_400_000);
+  const stock = new Map<
     string,
-    { id: string; costCents: number; packageSize: number; current: number }
+    {
+      id: string;
+      costCents: number;
+      packageSize: number;
+      minStock: number;
+      initial: number;
+      current: number;
+      returnable: boolean;
+      empties: number;
+    }
   >();
 
   for (const item of products) {
-    const quantity = isProduction ? 0 : item.initialPackages * item.packageSize;
+    const quantity = catalogOnly ? 0 : item.initialPackages * item.packageSize;
     const product = await prisma.product.create({
       data: {
         name: item.name,
@@ -162,13 +171,7 @@ async function seedCatalog(adminId: string) {
         supplierId: supplierIds.get(item.supplier),
       },
     });
-    productIds.set(item.name, {
-      id: product.id,
-      costCents: item.costCents,
-      packageSize: item.packageSize,
-      current: quantity,
-    });
-    if (quantity > 0) {
+    if (!catalogOnly) {
       await prisma.stockMovement.create({
         data: {
           productId: product.id,
@@ -181,6 +184,16 @@ async function seedCatalog(adminId: string) {
         },
       });
     }
+    stock.set(item.name, {
+      id: product.id,
+      costCents: item.costCents,
+      packageSize: item.packageSize,
+      minStock: item.minStock,
+      initial: quantity,
+      current: quantity,
+      returnable: Boolean(item.depositCents),
+      empties: 0,
+    });
   }
 
   const recipeRows = [];
@@ -192,7 +205,7 @@ async function seedCatalog(adminId: string) {
         priceCents: recipe.priceCents,
         items: {
           create: recipe.items.map(([productName, quantity]) => ({
-            productId: productIds.get(productName)!.id,
+            productId: stock.get(productName)!.id,
             quantity,
           })),
         },
@@ -201,92 +214,141 @@ async function seedCatalog(adminId: string) {
     recipeRows.push({ ...recipe, id: created.id });
   }
 
-  if (!isProduction) {
-    const lossAt = new Date(Date.now() - 2 * 86_400_000);
-    for (const [productName, quantity, note] of losses) {
-      const product = productIds.get(productName)!;
-      product.current -= quantity;
-      await prisma.product.update({
-        where: { id: product.id },
-        data: { currentStock: { decrement: quantity } },
-      });
-      await prisma.stockMovement.create({
-        data: {
-          productId: product.id,
-          type: "PERDA",
-          quantity: -quantity,
-          costCents: Math.round((quantity * product.costCents) / product.packageSize),
-          note,
-          userId: adminId,
-          createdAt: lossAt,
-        },
-      });
-    }
+  if (catalogOnly) {
+    console.log(`Cardápio do bar: ${products.length} produtos com estoque zerado, ${recipes.length} itens no cardápio.`);
+    return;
+  }
 
-    const next = random(42);
-    const totalWeight = recipeRows.reduce((sum, recipe) => sum + recipe.weight, 0);
-    for (let day = 6; day >= 0; day -= 1) {
-      const date = new Date(Date.now() - day * 86_400_000);
-      const salesToday = Math.round(25 + next() * 15);
-      for (let index = 0; index < salesToday; index += 1) {
-        let pick = next() * totalWeight;
-        const recipe = recipeRows.find((row) => (pick -= row.weight) < 0) ?? recipeRows[0];
-        const quantity = 1 + Math.floor(next() * 3);
-        const lines = recipe.items.map(([productName, perUnit]) => ({
-          product: productIds.get(productName)!,
-          quantity: perUnit * quantity,
-        }));
-        if (lines.some((line) => line.product.current < line.quantity)) {
+  const next = random(42);
+  const totalWeight = recipeRows.reduce((sum, recipe) => sum + recipe.weight, 0);
+
+  const losses: Array<[string, number, string]> = [
+    ["Cerveja Brahma 600 ml", 2, "Garrafa quebrou no engradado"],
+    ["Limão tahiti", 25, "Limões estragados"],
+    ["Gelo", 5000, "Saco derreteu fora do freezer"],
+    ["Calabresa", 500, "Passou da validade"],
+  ];
+
+  for (let day = 29; day >= 0; day -= 1) {
+    const date = new Date(Date.now() - day * 86_400_000);
+    const weekday = date.getDay();
+
+    if (day >= 3) {
+      const purchaseAt = new Date(date);
+      purchaseAt.setHours(10, 0, 0, 0);
+      for (const product of Array.from(stock.values())) {
+        if (product.current > product.minStock) {
           continue;
         }
-        const createdAt = new Date(date);
-        createdAt.setHours(16 + Math.floor(next() * 8), Math.floor(next() * 60), 0, 0);
-        if (createdAt.getTime() > Date.now()) {
-          createdAt.setTime(Date.now() - (salesToday - index) * 60_000);
-        }
-        const lineCosts = lines.map((line) =>
-          Math.round((line.quantity * line.product.costCents) / line.product.packageSize)
-        );
-        await prisma.sale.create({
+        const packages = Math.ceil((product.initial - product.current) / product.packageSize);
+        const quantity = packages * product.packageSize;
+        product.current += quantity;
+        const emptiesOut = product.returnable ? Math.min(product.empties, quantity) : 0;
+        product.empties -= emptiesOut;
+        await prisma.stockMovement.create({
           data: {
-            recipeId: recipe.id,
+            productId: product.id,
+            type: "ENTRADA",
             quantity,
-            priceCents: recipe.priceCents * quantity,
-            costCents: lineCosts.reduce((sum, value) => sum + value, 0),
+            costCents: packages * product.costCents,
+            note: "Reposição do fornecedor",
+            emptiesOut: emptiesOut || null,
             userId: adminId,
-            createdAt,
-            movements: {
-              create: lines.map((line, position) => ({
-                productId: line.product.id,
-                type: "VENDA" as const,
-                quantity: -line.quantity,
-                costCents: lineCosts[position],
-                userId: adminId,
-                createdAt,
-              })),
-            },
+            createdAt: purchaseAt,
           },
         });
-        for (const line of lines) {
-          line.product.current -= line.quantity;
-        }
       }
     }
 
-    for (const product of Array.from(productIds.values())) {
-      await prisma.product.update({
-        where: { id: product.id },
-        data: { currentStock: product.current },
-      });
+    if (day === 10) {
+      const lossAt = new Date(date);
+      lossAt.setHours(16, 0, 0, 0);
+      for (const [productName, quantity, note] of losses) {
+        const product = stock.get(productName)!;
+        if (product.current < quantity) {
+          continue;
+        }
+        product.current -= quantity;
+        await prisma.stockMovement.create({
+          data: {
+            productId: product.id,
+            type: "PERDA",
+            quantity: -quantity,
+            costCents: cost(quantity, product),
+            note,
+            userId: adminId,
+            createdAt: lossAt,
+          },
+        });
+      }
     }
+
+    const busy = weekday === 5 || weekday === 6 ? 2.2 : weekday === 0 ? 1.4 : 1;
+    const salesToday = Math.round((30 + next() * 20) * busy);
+
+    for (let index = 0; index < salesToday; index += 1) {
+      let pick = next() * totalWeight;
+      const recipe = recipeRows.find((row) => (pick -= row.weight) < 0) ?? recipeRows[0];
+      const quantity = 1 + Math.floor(next() * 3);
+      const lines = recipe.items.map(([productName, perUnit]) => {
+        const product = stock.get(productName)!;
+        return { product, quantity: perUnit * quantity };
+      });
+      if (lines.some((line) => line.product.current < line.quantity)) {
+        continue;
+      }
+      const createdAt = new Date(date);
+      createdAt.setHours(16 + Math.floor(next() * 8), Math.floor(next() * 60), 0, 0);
+      if (createdAt.getTime() > Date.now()) {
+        createdAt.setTime(Date.now() - (salesToday - index) * 60_000);
+      }
+      const lineCosts = lines.map((line) => cost(line.quantity, line.product));
+      const sellerId = next() < 0.7 ? staffId : adminId;
+
+      await prisma.sale.create({
+        data: {
+          recipeId: recipe.id,
+          quantity,
+          priceCents: recipe.priceCents * quantity,
+          costCents: lineCosts.reduce((sum, value) => sum + value, 0),
+          userId: sellerId,
+          createdAt,
+          movements: {
+            create: lines.map((line, position) => ({
+              productId: line.product.id,
+              type: "VENDA" as const,
+              quantity: -line.quantity,
+              costCents: lineCosts[position],
+              userId: sellerId,
+              createdAt,
+            })),
+          },
+        },
+      });
+      for (const line of lines) {
+        line.product.current -= line.quantity;
+        if (line.product.returnable) {
+          line.product.empties += line.quantity;
+        }
+      }
+    }
+  }
+
+  for (const product of Array.from(stock.values())) {
+    await prisma.product.update({
+      where: { id: product.id },
+      data: { currentStock: product.current, emptyStock: product.empties },
+    });
   }
 
   console.log(`Dados de exemplo: ${products.length} produtos, ${recipes.length} itens no cardápio.`);
 }
 
 async function main() {
-  const adminId = await seedUsers();
-  await seedCatalog(adminId);
+  const { admin, staffId } = await seedUsers();
+  if (catalogOnly || !isProduction) {
+    await seedSampleData(admin.id, staffId ?? admin.id);
+  }
 }
 
 main()

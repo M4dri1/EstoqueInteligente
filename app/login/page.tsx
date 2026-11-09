@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -78,6 +79,9 @@ export default function LoginPage() {
           {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
+      <div className="mt-3 flex justify-center">
+        <ThemeToggle className="text-kb-muted hover:bg-kb-raised hover:text-kb-ink" />
+      </div>
     </main>
   );
 }

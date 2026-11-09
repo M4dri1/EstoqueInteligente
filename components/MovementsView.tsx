@@ -15,6 +15,8 @@ type Product = {
   packageSize: number;
   costCents: number;
   currentStock: number;
+  returnable: boolean;
+  emptyStock: number;
 };
 
 type Movement = {
@@ -39,6 +41,7 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
   const [amount, setAmount] = useState("");
   const [direction, setDirection] = useState<1 | -1>(-1);
   const [paid, setPaid] = useState("");
+  const [empties, setEmpties] = useState("");
   const [note, setNote] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterProduct, setFilterProduct] = useState(initialProductId ?? "");
@@ -96,13 +99,19 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
       }
       costCents = value;
     }
+    const takesEmpties = kind === "ENTRADA" && product.returnable;
+    const emptiesOut = takesEmpties && empties.trim() ? Number(empties) : undefined;
+    if (emptiesOut !== undefined && (!Number.isInteger(emptiesOut) || emptiesOut < 0)) {
+      setMessage({ kind: "error", text: "Garrafas devolvidas precisa ser um número inteiro." });
+      return;
+    }
 
     setSaving(true);
     try {
       const quantity = kind === "AJUSTE" ? baseQuantity * direction : baseQuantity;
       const result = await api<{ currentStock: number }>("/api/movimentacoes", {
         method: "POST",
-        body: JSON.stringify({ productId: product.id, type: kind, quantity, costCents, note: note || null }),
+        body: JSON.stringify({ productId: product.id, type: kind, quantity, costCents, emptiesOut, note: note || null }),
       });
       setMessage({
         kind: "success",
@@ -110,6 +119,7 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
       });
       setAmount("");
       setPaid("");
+      setEmpties("");
       setNote("");
       await Promise.all([loadProducts(), loadMovements()]);
     } catch (reason) {
@@ -193,7 +203,15 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
               </div>
             ) : null}
 
-            <div className={kind === "ENTRADA" ? "md:col-span-2 xl:col-span-4" : ""}>
+            {kind === "ENTRADA" && product?.returnable ? (
+              <div>
+                <label className="kb-label" htmlFor="m-empties">Garrafas vazias devolvidas</label>
+                <input id="m-empties" className="kb-input" inputMode="numeric" value={empties} onChange={(event) => setEmpties(event.target.value)} placeholder="0" />
+                <p className="mt-1 text-xs text-kb-muted">{`Tem ${product.emptyStock} vazios no depósito.`}</p>
+              </div>
+            ) : null}
+
+            <div className={kind === "ENTRADA" ? (product?.returnable ? "md:col-span-2 xl:col-span-3" : "md:col-span-2 xl:col-span-4") : ""}>
               <label className="kb-label" htmlFor="m-note">{kind === "PERDA" ? "Motivo (obrigatório)" : "Observação"}</label>
               <input id="m-note" className="kb-input" maxLength={200} value={note} onChange={(event) => setNote(event.target.value)} placeholder={kind === "PERDA" ? "Ex.: garrafa quebrou na reposição" : kind === "ENTRADA" ? "Ex.: NF 1234" : ""} />
             </div>

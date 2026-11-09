@@ -1,8 +1,9 @@
 import type { MovementType } from "@prisma/client";
-import { movementSchema } from "@/lib/validation";
+import { emptiesSchema, movementSchema } from "@/lib/validation";
 import { fail, type ServiceResult } from "@/lib/api";
 import type { SessionPayload } from "@/lib/auth";
 import {
+  InsufficientEmptiesError,
   InsufficientStockError,
   movementRepository,
 } from "@/lib/repositories/movement-repository";
@@ -53,6 +54,10 @@ export const movementService = {
       });
     }
 
+    if (input.emptiesOut && !product.returnable) {
+      return fail(400, "Esse produto não é de garrafa retornável.");
+    }
+
     try {
       const movement = await movementRepository.register({
         productId: product.id,
@@ -63,6 +68,7 @@ export const movementService = {
         note: input.note,
         userId: user.userId,
         newProductCostCents,
+        emptiesOut: input.emptiesOut,
       });
       return {
         ok: true,
@@ -70,10 +76,27 @@ export const movementService = {
         data: { id: movement.id, currentStock: product.currentStock + delta },
       };
     } catch (error) {
-      if (error instanceof InsufficientStockError) {
+      if (error instanceof InsufficientStockError || error instanceof InsufficientEmptiesError) {
         return fail(409, error.message);
       }
       throw error;
     }
+  },
+
+  async setEmpties(
+    productId: string,
+    body: unknown,
+    user: SessionPayload
+  ): Promise<ServiceResult<{ emptyStock: number }>> {
+    const parsed = emptiesSchema.safeParse(body);
+    if (!parsed.success) {
+      return fail(400, "Informe quantas garrafas vazias tem.");
+    }
+    const product = await productRepository.findById(productId);
+    if (!product || !product.returnable) {
+      return fail(404, "Produto de garrafa retornável não encontrado.");
+    }
+    await movementRepository.setEmpties(product.id, parsed.data.emptyStock, user.userId, product.name);
+    return { ok: true, status: 200, data: { emptyStock: parsed.data.emptyStock } };
   },
 };

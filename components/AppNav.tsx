@@ -3,16 +3,21 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 type NavItem = { href: string; label: string; adminOnly?: boolean };
 
 const ITEMS: NavItem[] = [
+  { href: "/painel", label: "Painel" },
   { href: "/painel/balcao", label: "Balcão" },
   { href: "/painel/estoque", label: "Estoque" },
   { href: "/painel/movimentacoes", label: "Entradas e perdas" },
   { href: "/painel/inventario", label: "Contagem" },
   { href: "/painel/cardapio", label: "Cardápio", adminOnly: true },
   { href: "/painel/fornecedores", label: "Fornecedores", adminOnly: true },
+  { href: "/painel/relatorios", label: "Relatórios", adminOnly: true },
+  { href: "/painel/usuarios", label: "Usuários", adminOnly: true },
+  { href: "/painel/senha", label: "Minha senha" },
 ];
 
 export function AppNav({ name, role }: { name: string; role: "ADMIN" | "STAFF" }) {
@@ -50,6 +55,7 @@ export function AppNav({ name, role }: { name: string; role: "ADMIN" | "STAFF" }
           ))}
         </nav>
         <span className="hidden whitespace-nowrap text-sm text-[#ffc2c7] xl:inline">{name}</span>
+        <ThemeToggle className="text-[#ffd9dc] hover:bg-white/15 hover:text-white" />
         <button
           type="button"
           onClick={logout}
