@@ -78,6 +78,13 @@ export function averageCostCents(
   return Math.round(((stockValue + entry.paidCents) * current.packageSize) / (stock + entry.quantity));
 }
 
+export function variancePct(difference: number | null, sold: number) {
+  if (difference === null || sold <= 0) {
+    return null;
+  }
+  return Math.round((difference / sold) * 1000) / 10;
+}
+
 export function packagesToBase(packages: number, packageSize: number) {
   return Math.round(packages * packageSize);
 }
@@ -127,4 +134,11 @@ export function findShortages(
       available: item.product.currentStock,
     }))
     .filter((row) => row.needed > row.available);
+}
+
+export function inventoryDifference(expected: number, counted: number | null) {
+  if (counted === null) {
+    return null;
+  }
+  return counted - expected;
 }

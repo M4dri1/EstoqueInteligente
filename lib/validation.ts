@@ -59,6 +59,10 @@ export const productSchema = z.object({
     path: ["targetStock"],
   });
 
+export const inventoryStartSchema = z.object({
+  categories: z.array(z.enum(CATEGORIES)).max(CATEGORIES.length).optional(),
+});
+
 export const supplierSchema = z.object({
   name: text(80),
   phone: optionalText(30),
@@ -109,6 +113,17 @@ export const recipeSchema = z.object({
 export const saleSchema = z.object({
   recipeId: text(40),
   quantity: z.number().int().min(1).max(200),
+});
+
+export const inventoryCountSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        productId: text(40),
+        counted: z.number().int().min(0).max(10_000_000).nullable(),
+      })
+    )
+    .max(1000),
 });
 
 export type ProductInput = z.infer<typeof productSchema>;

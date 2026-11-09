@@ -49,6 +49,34 @@ export function Section({
   );
 }
 
+export function StatCard({
+  label,
+  value,
+  hint,
+  tone = "default",
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone?: "default" | "good" | "warn" | "bad";
+}) {
+  const color =
+    tone === "good"
+      ? "text-kb-ok"
+      : tone === "warn"
+        ? "text-kb-warn"
+        : tone === "bad"
+          ? "text-kb-danger"
+          : "text-kb-ink";
+  return (
+    <div className="kb-card px-3 py-2.5">
+      <p className="text-xs text-kb-muted">{label}</p>
+      <p className={`text-xl font-semibold tabular-nums ${color}`}>{value}</p>
+      {hint ? <p className="text-xs text-kb-muted">{hint}</p> : null}
+    </div>
+  );
+}
+
 const STATUS_STYLE: Record<string, string> = {
   OK: "text-kb-ok",
   BAIXO: "text-kb-warn",

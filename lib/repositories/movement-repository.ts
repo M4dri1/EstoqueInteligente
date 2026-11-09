@@ -82,4 +82,12 @@ export const movementRepository = {
       });
     });
   },
+
+  soldBetween(start: Date, end: Date) {
+    return prisma.stockMovement.groupBy({
+      by: ["productId"],
+      where: { type: "VENDA", createdAt: { gte: start, lte: end } },
+      _sum: { quantity: true },
+    });
+  },
 };

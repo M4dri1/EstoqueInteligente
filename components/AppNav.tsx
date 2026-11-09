@@ -10,6 +10,7 @@ const ITEMS: NavItem[] = [
   { href: "/painel/balcao", label: "Balcão" },
   { href: "/painel/estoque", label: "Estoque" },
   { href: "/painel/movimentacoes", label: "Entradas e perdas" },
+  { href: "/painel/inventario", label: "Contagem" },
   { href: "/painel/cardapio", label: "Cardápio", adminOnly: true },
   { href: "/painel/fornecedores", label: "Fornecedores", adminOnly: true },
 ];

@@ -25,6 +25,11 @@ enum MovementType {
   AJUSTE
 }
 
+enum InventoryStatus {
+  ABERTO
+  FECHADO
+}
+
 model User {
   id           String          @id @default(cuid())
   email        String          @unique
@@ -34,7 +39,8 @@ model User {
   active       Boolean         @default(true)
   createdAt    DateTime        @default(now())
   movements    StockMovement[]
-  sales        Sale[]          @relation("SaleUser")
+  sales        Sale[]           @relation("SaleUser")
+  inventories  InventoryCount[]
 }
 
 model Supplier {
@@ -68,6 +74,7 @@ model Product {
   updatedAt     DateTime            @updatedAt
   movements     StockMovement[]
   recipeItems   RecipeItem[]
+  inventoryRows InventoryItem[]
 
   @@index([category])
 }
@@ -120,10 +127,36 @@ model StockMovement {
   note      String?
   userId    String
   user      User         @relation(fields: [userId], references: [id])
-  saleId    String?
-  sale      Sale?        @relation(fields: [saleId], references: [id])
-  createdAt DateTime     @default(now())
+  saleId      String?
+  sale        Sale?           @relation(fields: [saleId], references: [id])
+  inventoryId String?
+  inventory   InventoryCount? @relation(fields: [inventoryId], references: [id])
+  createdAt   DateTime        @default(now())
 
   @@index([productId, createdAt])
   @@index([type, createdAt])
+}
+
+model InventoryCount {
+  id         String          @id @default(cuid())
+  status     InventoryStatus @default(ABERTO)
+  categories String[]        @default([])
+  userId     String
+  user       User            @relation(fields: [userId], references: [id])
+  createdAt  DateTime        @default(now())
+  closedAt   DateTime?
+  items      InventoryItem[]
+  movements  StockMovement[]
+}
+
+model InventoryItem {
+  id          String         @id @default(cuid())
+  inventoryId String
+  inventory   InventoryCount @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product        @relation(fields: [productId], references: [id])
+  expected    Int
+  counted     Int?
+
+  @@unique([inventoryId, productId])
 }
