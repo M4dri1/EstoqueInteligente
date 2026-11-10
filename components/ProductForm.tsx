@@ -192,7 +192,7 @@ export function ProductForm({ product, suppliers, onSaved, onCancel }: Props) {
         {unit === "UN" ? (
           <div className="flex items-end gap-3">
             <label className="flex items-center gap-2 pb-3 text-sm">
-              <input type="checkbox" checked={returnable} onChange={(event) => setReturnable(event.target.checked)} className="h-4 w-4 accent-[#c8102e]" />
+              <input type="checkbox" checked={returnable} onChange={(event) => setReturnable(event.target.checked)} className="h-4 w-4 accent-[#b3242b]" />
               Garrafa retornável
             </label>
             {returnable ? (
@@ -205,15 +205,11 @@ export function ProductForm({ product, suppliers, onSaved, onCancel }: Props) {
         ) : null}
         {product ? (
           <label className="flex items-center gap-2 self-end pb-3 text-sm">
-            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} className="h-4 w-4 accent-[#c8102e]" />
+            <input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} className="h-4 w-4 accent-[#b3242b]" />
             Produto ativo
           </label>
         ) : null}
       </div>
-
-      {!product ? (
-        <p className="text-xs text-kb-muted">O produto começa com estoque zero. Depois de salvar, registre a primeira entrada em Entradas e perdas.</p>
-      ) : null}
 
       {error ? <Notice kind="error">{error}</Notice> : null}
 

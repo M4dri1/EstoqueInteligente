@@ -131,14 +131,14 @@ export function ReportsView() {
                   <div className="flex h-48 items-end gap-1">
                     {report.daily.map((day) => (
                       <div key={day.date} className="relative flex h-full flex-1 items-end" title={`${day.date}: ${formatCents(day.revenueCents)} / custo ${formatCents(day.cmvCents)}`}>
-                        <div className="w-full rounded-t bg-kb-brand" style={{ height: `${(day.revenueCents / maxDay) * 100}%` }} />
-                        <div className="absolute bottom-0 w-full rounded-t bg-kb-cost" style={{ height: `${(day.cmvCents / maxDay) * 100}%` }} />
+                        <div className="w-full bg-kb-info/70" style={{ height: `${(day.revenueCents / maxDay) * 100}%` }} />
+                        <div className="absolute bottom-0 w-full bg-kb-cost" style={{ height: `${(day.cmvCents / maxDay) * 100}%` }} />
                       </div>
                     ))}
                   </div>
                   <div className="mt-3 flex gap-4 text-xs text-kb-muted">
                     <span className="flex items-center gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-sm bg-kb-brand" /> Faturamento
+                      <span className="h-2.5 w-2.5 bg-kb-info/70" /> Faturamento
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="h-2.5 w-2.5 rounded-sm bg-kb-cost" /> Custo (CMV)
@@ -219,7 +219,7 @@ export function ReportsView() {
             )}
           </Section>
 
-          <Section title="Vendas por funcionário" description="o que cada um lançou no balcão" flush>
+          <Section title="Vendas por funcionário" flush>
             <table className="kb-table">
               <thead>
                 <tr>
@@ -272,7 +272,7 @@ export function ReportsView() {
                     report.abc.map((row) => (
                       <tr key={row.productId}>
                         <td>
-                          <span className={`inline-flex h-7 w-7 items-center justify-center rounded-lg text-sm font-bold ${ABC_STYLE[row.abc]}`}>{row.abc}</span>
+                          <span className={`inline-flex h-7 w-7 items-center justify-center rounded text-sm font-semibold ${ABC_STYLE[row.abc]}`}>{row.abc}</span>
                         </td>
                         <td>{row.name}</td>
                         <td className="tabular-nums">{formatCents(row.valueCents)}</td>

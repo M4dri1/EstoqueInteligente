@@ -12,7 +12,7 @@ export function PageHeader({
   return (
     <header className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-kb-line pb-3">
       <div>
-        <h1 className="text-xl font-semibold">{title}</h1>
+        <h1 className="text-lg font-semibold">{title}</h1>
         {description ? <p className="text-sm text-kb-muted">{description}</p> : null}
       </div>
       {actions ? <div className="no-print flex flex-wrap gap-2">{actions}</div> : null}
@@ -123,7 +123,7 @@ export function Notice({ kind, children }: { kind: "error" | "success"; children
   return (
     <p
       role={kind === "error" ? "alert" : "status"}
-      className={`rounded-md border px-3 py-2 text-sm ${
+      className={`rounded border px-3 py-2 text-sm ${
         kind === "error"
           ? "border-kb-error-line bg-kb-error-bg text-kb-danger"
           : "border-kb-ok-line bg-kb-ok-bg text-kb-ok"

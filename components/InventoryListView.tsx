@@ -73,7 +73,7 @@ export function InventoryListView() {
 
       {inventories && !open ? (
         <div className="mb-4 grid gap-4 md:grid-cols-2">
-          <Section title="Contagem rápida" description="o que mais some, toda semana">
+          <Section title="Contagem rápida">
             <div className="mb-3 flex flex-wrap gap-x-4 gap-y-2">
               {CATEGORIES.map((category) => (
                 <label key={category} className="flex items-center gap-2 text-sm">
@@ -81,7 +81,7 @@ export function InventoryListView() {
                     type="checkbox"
                     checked={picked.includes(category)}
                     onChange={() => toggle(category)}
-                    className="h-4 w-4 accent-[#c8102e]"
+                    className="h-4 w-4 accent-[#b3242b]"
                   />
                   {category}
                 </label>
@@ -93,13 +93,11 @@ export function InventoryListView() {
               disabled={opening || picked.length === 0}
               onClick={() => start(picked)}
             >
-              {opening ? "Abrindo..." : "Contar só essas"}
+              {opening ? "Abrindo..." : "Iniciar contagem"}
             </button>
           </Section>
-          <Section title="Contagem completa" description="todo o estoque, uma vez por mês">
-            <p className="mb-3 text-sm text-kb-muted">
-              Conta tudo: cerveja, destilado, refri, cozinha, gelo e carvão. Melhor fazer com o bar fechado.
-            </p>
+          <Section title="Contagem completa">
+            <p className="mb-3 text-sm text-kb-muted">Todos os produtos ativos.</p>
             <button type="button" className="kb-btn-ghost" disabled={opening} onClick={() => start([])}>
               Contar tudo
             </button>

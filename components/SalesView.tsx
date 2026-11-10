@@ -16,15 +16,6 @@ type Recipe = {
 
 type CartLine = { recipe: Recipe; quantity: number };
 
-const CATEGORY_COLOR: Record<string, string> = {
-  Cervejas: "border-l-[#c8102e]",
-  Doses: "border-l-[#b07a4a]",
-  Caipirinhas: "border-l-[#5a9e3a]",
-  Porções: "border-l-[#d0682a]",
-  Espetinhos: "border-l-[#8a5a3a]",
-  "Refri e água": "border-l-[#2f7fb0]",
-};
-
 type Sale = {
   id: string;
   quantity: number;
@@ -179,20 +170,18 @@ export function SalesView() {
                           type="button"
                           onClick={() => add(recipe)}
                           disabled={out}
-                          className={`min-h-[64px] w-full rounded-md border border-l-4 px-3 py-2 text-left ${
-                            CATEGORY_COLOR[recipe.category] ?? "border-l-kb-line"
-                          } ${
+                          className={`min-h-[64px] w-full rounded border px-3 py-2 text-left ${
                             count
                               ? "border-kb-brand bg-kb-brand-soft"
-                              : "border-kb-line bg-kb-panel hover:bg-kb-raised"
+                              : "border-kb-line bg-kb-panel hover:bg-kb-hover"
                           } ${out ? "cursor-not-allowed opacity-50" : ""}`}
                         >
                           {count ? (
-                            <span className="absolute right-1.5 top-1.5 flex h-7 min-w-7 items-center justify-center rounded-full bg-kb-brand px-1.5 text-sm font-bold text-white">
+                            <span className="absolute right-1.5 top-1.5 flex h-7 min-w-7 items-center justify-center rounded bg-kb-brand px-1.5 text-sm font-semibold text-white">
                               {count}
                             </span>
                           ) : null}
-                          <span className={`block font-semibold ${count ? "pr-16" : ""}`}>{recipe.name}</span>
+                          <span className={`block font-medium ${count ? "pr-16" : ""}`}>{recipe.name}</span>
                           <span className="flex justify-between text-xs">
                             <span>{formatCents(recipe.priceCents)}</span>
                             <span className={out ? "text-kb-danger" : recipe.available <= 5 ? "text-kb-warn" : "text-kb-muted"}>
@@ -206,7 +195,7 @@ export function SalesView() {
                             onClick={() => change(recipe.id, -1)}
                             aria-label={`Tirar um ${recipe.name}`}
                             title="Tirar um"
-                            className="absolute right-10 top-1.5 flex h-7 w-7 items-center justify-center rounded-full border border-kb-brand bg-kb-panel text-lg font-bold leading-none text-kb-brand hover:bg-kb-hover"
+                            className="absolute right-10 top-1.5 flex h-7 w-7 items-center justify-center rounded border border-kb-line bg-kb-panel text-lg leading-none text-kb-ink hover:bg-kb-hover"
                           >
                             −
                           </button>
@@ -232,7 +221,7 @@ export function SalesView() {
             }
           >
             {cart.length === 0 ? (
-              <p className="text-sm text-kb-muted">Toque nos itens para montar o pedido. Tocar de novo soma mais um.</p>
+              <p className="text-sm text-kb-muted">Nenhum item no pedido.</p>
             ) : (
               <div className="space-y-2">
                 {cart.map((line) => (

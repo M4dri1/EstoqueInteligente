@@ -11,9 +11,9 @@ const config: Config = {
     extend: {
       colors: {
         kb: {
-          night: "#a50e1c",
-          brand: "#c8102e",
-          "brand-dark": "#9c0b22",
+          night: "#1d2127",
+          brand: "#b3242b",
+          "brand-dark": "#8f1c22",
           foam: "#ffffff",
           bg: token("bg"),
           panel: token("panel"),

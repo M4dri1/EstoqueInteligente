@@ -38,7 +38,10 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto max-w-sm px-4 pt-24">
-      <h1 className="mb-4 rounded-md border-b-4 border-[#6e0814] bg-kb-night py-3 text-center text-lg font-extrabold uppercase tracking-wide text-white">Estoque Inteligente</h1>
+      <div className="mb-4">
+        <h1 className="text-lg font-semibold">Estoque Inteligente</h1>
+        <p className="text-sm text-kb-muted">Kassius Bar</p>
+      </div>
       <form onSubmit={handleSubmit} className="kb-card w-full space-y-4 p-5">
 
         <div>
@@ -72,14 +75,14 @@ export default function LoginPage() {
         </div>
 
         {error ? (
-          <p className="rounded-md border border-kb-error-line bg-kb-error-bg px-3 py-2 text-sm text-kb-danger">{error}</p>
+          <p className="rounded border border-kb-error-line bg-kb-error-bg px-3 py-2 text-sm text-kb-danger">{error}</p>
         ) : null}
 
         <button type="submit" className="kb-btn w-full" disabled={loading}>
           {loading ? "Entrando..." : "Entrar"}
         </button>
       </form>
-      <div className="mt-3 flex justify-center">
+      <div className="mt-3 flex justify-end">
         <ThemeToggle className="text-kb-muted hover:bg-kb-raised hover:text-kb-ink" />
       </div>
     </main>

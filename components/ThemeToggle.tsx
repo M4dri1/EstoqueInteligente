@@ -45,7 +45,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={toggle}
       title={label}
       aria-label={label}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${className}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded transition-colors ${className}`}
     >
       {dark ? <SunIcon /> : <MoonIcon />}
     </button>

@@ -67,10 +67,10 @@ export function DashboardView({ isAdmin }: { isAdmin: boolean }) {
         actions={
           <>
             <Link href="/painel/balcao" className="kb-btn">
-              Ir para o balcão
+              Nova venda
             </Link>
             <Link href="/painel/movimentacoes" className="kb-btn-ghost">
-              Entrada ou perda
+              Lançar entrada
             </Link>
           </>
         }
@@ -93,35 +93,58 @@ export function DashboardView({ isAdmin }: { isAdmin: boolean }) {
       ) : null}
 
       {data ? (
-        <div className={`mb-4 grid gap-3 ${isAdmin ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
-          <Link href="/painel/estoque" className="kb-card block border-l-4 border-l-kb-brand px-3 py-2.5 hover:border-kb-brand">
-            <p className="text-xs uppercase tracking-wide text-kb-muted">Garrafas vazias</p>
-            <p className="text-xl font-semibold tabular-nums">{data.empties?.bottles ?? 0} garrafas</p>
-            <p className="truncate text-xs text-kb-muted">
-              {(data.empties?.rows ?? []).map((row) => `${row.name.replace("Cerveja ", "")}: ${row.emptyStock}`).join(" · ") || "Nenhuma cerveja retornável"}
-            </p>
-          </Link>
-          {isAdmin ? (
-            <Link href="/painel/relatorios" className="kb-card block border-l-4 border-l-kb-ok px-3 py-2.5 hover:border-kb-brand">
-              <p className="text-xs uppercase tracking-wide text-kb-muted">Pedidos prontos</p>
-              <p className="text-xl font-semibold tabular-nums">
-                {data.orders?.suppliers ? `${data.orders.suppliers} fornecedor${data.orders.suppliers > 1 ? "es" : ""}` : "Nada a pedir"}
-              </p>
-              <p className="text-xs text-kb-muted">
-                {data.orders?.suppliers ? `${formatCents(data.orders.estimatedCents)} · mandar no WhatsApp` : "Estoque acima do mínimo"}
-              </p>
-            </Link>
-          ) : null}
-          <Link href="/painel/inventario" className="kb-card block border-l-4 border-l-kb-info px-3 py-2.5 hover:border-kb-brand">
-            <p className="text-xs uppercase tracking-wide text-kb-muted">Contagem</p>
-            <p className="text-xl font-semibold">
-              {!data.lastCount ? "Nunca contado" : data.lastCount.status === "ABERTO" ? "Contagem aberta" : `Última: ${formatDateTime(data.lastCount.closedAt ?? data.lastCount.createdAt).split(",")[0]}`}
-            </p>
-            <p className="text-xs text-kb-muted">
-              {data.lastCount?.status === "ABERTO" ? "Continuar contando" : "Fazer contagem rápida de cerveja e destilado"}
-            </p>
-          </Link>
-        </div>
+        <Section title="Situação" flush>
+          <table className="kb-table">
+            <tbody>
+              <tr>
+                <td className="w-48 text-kb-muted">Garrafas vazias</td>
+                <td className="tabular-nums">
+                  {data.empties?.bottles ?? 0}
+                  {(data.empties?.rows ?? []).length ? (
+                    <span className="ml-2 text-kb-muted">
+                      ({(data.empties?.rows ?? []).map((row) => `${row.name.replace("Cerveja ", "")}: ${row.emptyStock}`).join(", ")})
+                    </span>
+                  ) : null}
+                </td>
+                <td className="w-32 text-right">
+                  <Link href="/painel/estoque" className="text-kb-info hover:underline">
+                    Ver
+                  </Link>
+                </td>
+              </tr>
+              {isAdmin ? (
+                <tr>
+                  <td className="text-kb-muted">Pedidos a fazer</td>
+                  <td className="tabular-nums">
+                    {data.orders?.suppliers
+                      ? `${data.orders.suppliers} fornecedor${data.orders.suppliers > 1 ? "es" : ""}, ${formatCents(data.orders.estimatedCents)}`
+                      : "Nenhum"}
+                  </td>
+                  <td className="text-right">
+                    <Link href="/painel/relatorios" className="text-kb-info hover:underline">
+                      Ver pedidos
+                    </Link>
+                  </td>
+                </tr>
+              ) : null}
+              <tr>
+                <td className="text-kb-muted">Última contagem</td>
+                <td>
+                  {!data.lastCount
+                    ? "Nenhuma"
+                    : data.lastCount.status === "ABERTO"
+                      ? "Em andamento"
+                      : formatDateTime(data.lastCount.closedAt ?? data.lastCount.createdAt).split(",")[0]}
+                </td>
+                <td className="text-right">
+                  <Link href="/painel/inventario" className="text-kb-info hover:underline">
+                    {data.lastCount?.status === "ABERTO" ? "Continuar" : "Contar"}
+                  </Link>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </Section>
       ) : null}
 
       <div className={isAdmin ? "grid gap-4 xl:grid-cols-[1.4fr_1fr]" : ""}>
@@ -176,7 +199,7 @@ export function DashboardView({ isAdmin }: { isAdmin: boolean }) {
                   {data.daily.map((day) => (
                     <div key={day.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
                       <div
-                        className="w-full bg-kb-brand"
+                        className="w-full bg-kb-info/70"
                         style={{ height: `${Math.max((day.revenueCents / maxRevenue) * 100, 4)}%` }}
                         title={formatCents(day.revenueCents)}
                       />

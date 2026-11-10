@@ -129,10 +129,10 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
     }
   }
 
-  const kinds: Array<{ value: Kind; label: string; hint: string }> = [
-    { value: "ENTRADA", label: "Entrada", hint: "Chegou mercadoria do fornecedor." },
-    { value: "PERDA", label: "Perda", hint: "Quebrou, venceu, derramou ou estragou." },
-    { value: "AJUSTE", label: "Ajuste", hint: "Corrigir o saldo quando a contagem não bate." },
+  const kinds: Array<{ value: Kind; label: string }> = [
+    { value: "ENTRADA", label: "Entrada" },
+    { value: "PERDA", label: "Perda" },
+    { value: "AJUSTE", label: "Ajuste" },
   ];
   const allowed = kinds.filter((item) => isAdmin || item.value === "PERDA");
 
@@ -142,18 +142,17 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
 
       <Section title="Novo registro">
         <form onSubmit={submit} className="space-y-5">
-          <div className="flex flex-wrap gap-2">
+          <div className="inline-flex overflow-hidden rounded border border-kb-line">
             {allowed.map((item) => (
               <button
                 key={item.value}
                 type="button"
                 onClick={() => setKind(item.value)}
-                className={`rounded-md border px-4 py-2.5 text-left text-sm transition ${
-                  kind === item.value ? "border-kb-brand bg-kb-brand-soft text-kb-ink" : "border-kb-line text-kb-muted hover:bg-kb-raised"
+                className={`border-l border-kb-line px-4 py-1.5 text-sm first:border-l-0 ${
+                  kind === item.value ? "bg-kb-raised font-medium text-kb-ink" : "bg-kb-panel text-kb-muted hover:bg-kb-hover"
                 }`}
               >
-                <span className="block font-semibold">{item.label}</span>
-                <span className="text-xs">{item.hint}</span>
+                {item.label}
               </button>
             ))}
           </div>
@@ -198,9 +197,7 @@ export function MovementsView({ isAdmin, initialProductId }: { isAdmin: boolean;
             {kind === "ENTRADA" ? (
               <div>
                 <label className="kb-label" htmlFor="m-paid">Valor pago no total (R$)</label>
-                <input id="m-paid" className="kb-input" inputMode="decimal" value={paid} onChange={(event) => setPaid(event.target.value)} placeholder={product && baseQuantity ? formatCents(Math.round((baseQuantity * product.costCents) / product.packageSize)) : "opcional"} />
-                <p className="mt-1 text-xs text-kb-muted">Se preencher, o custo vira a média entre o que já tinha e o que chegou.</p>
-              </div>
+                <input id="m-paid" className="kb-input" inputMode="decimal" value={paid} onChange={(event) => setPaid(event.target.value)} placeholder={product && baseQuantity ? formatCents(Math.round((baseQuantity * product.costCents) / product.packageSize)) : "opcional"} />              </div>
             ) : null}
 
             {kind === "ENTRADA" && product?.returnable ? (

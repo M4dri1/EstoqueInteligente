@@ -190,15 +190,8 @@ export function InventoryCountView({ id, isAdmin }: { id: string; isAdmin: boole
         </div>
       ) : null}
 
-      {isOpen ? (
-        <p className="mb-4 text-sm text-kb-muted">
-          Cerveja, refri e lata contam por unidade. Destilado aberto entra em fração: meia garrafa = 0,5. Deixe em branco o que não foi contado. A diferença aparece depois de salvar.
-          {isAdmin ? "" : " O administrador fecha a contagem."}
-        </p>
-      ) : null}
-
       <p className="mb-4 text-sm text-kb-muted">
-        {`Vendido = o que saiu pelo balcão desde ${formatDateTime(inventory.salesSince)}. Diferença acima de 2% das vendas fica em vermelho: vale olhar dose servida, quebra ou desvio.`}
+        {`Vendas consideradas desde ${formatDateTime(inventory.salesSince)}.`}
       </p>
 
       {groups.map(([category, rows]) => (

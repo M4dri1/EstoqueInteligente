@@ -223,7 +223,7 @@ export function RecipesView() {
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-6 rounded-md bg-kb-raised px-4 py-3 text-sm">
+          <div className="flex flex-wrap gap-6 rounded bg-kb-raised px-4 py-3 text-sm">
             <span>
               Custo: <strong>{formatCents(preview.cost)}</strong>
             </span>

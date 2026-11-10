@@ -137,9 +137,6 @@ export function EmptiesPanel({
           </tbody>
         </table>
       </div>
-      <p className="border-t border-kb-line px-3 py-2 text-xs text-kb-muted">
-        Cada cerveja retornável vendida no balcão vira uma garrafa vazia. Quando o fornecedor entregar, informe na entrada quantas vazias ele levou de volta.
-      </p>
     </Section>
   );
 }

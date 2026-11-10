@@ -96,12 +96,12 @@ export function ProductsView({ isAdmin }: { isAdmin: boolean }) {
           ))}
         </select>
         <label className="flex items-center gap-2 text-sm text-kb-muted">
-          <input type="checkbox" checked={onlyAlerts} onChange={(event) => setOnlyAlerts(event.target.checked)} className="h-4 w-4 accent-[#c8102e]" />
+          <input type="checkbox" checked={onlyAlerts} onChange={(event) => setOnlyAlerts(event.target.checked)} className="h-4 w-4 accent-[#b3242b]" />
           Só precisa repor
         </label>
         {isAdmin ? (
           <label className="flex items-center gap-2 text-sm text-kb-muted">
-            <input type="checkbox" checked={showInactive} onChange={(event) => setShowInactive(event.target.checked)} className="h-4 w-4 accent-[#c8102e]" />
+            <input type="checkbox" checked={showInactive} onChange={(event) => setShowInactive(event.target.checked)} className="h-4 w-4 accent-[#b3242b]" />
             Mostrar inativos
           </label>
         ) : null}

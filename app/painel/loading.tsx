@@ -5,7 +5,7 @@ export default function PanelLoading() {
       <div className="h-px bg-kb-line" />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }, (_, index) => (
-          <div key={index} className="h-20 rounded-lg border border-kb-line bg-kb-panel" />
+          <div key={index} className="h-20 rounded border border-kb-line bg-kb-panel" />
         ))}
       </div>
     </div>
